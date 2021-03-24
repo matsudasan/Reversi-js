@@ -1,7 +1,10 @@
 const table = document.querySelector('table')
 const h1 = document.querySelector('h1')
+const result = document.getElementById('result')
+const path = document.getElementById('path')
 const board = []
 let turn = "white"
+let skip=false
 
 const CreateArray = () => {
     for (let i = 0; i < 8; i++) {
@@ -18,7 +21,8 @@ const CreateArray = () => {
 }
 
 const CreateTable = () => {
-    h1.innerText = `${turn}の番です`
+    const player = turn === "white" ? '白' : '黒'
+    h1.innerText = `${player}の番です`
     const fragment = document.createDocumentFragment()
     for (let i = 0; i < 8; i++) {
         const tr = document.createElement('tr')
@@ -46,7 +50,7 @@ const ReverseArray = (y, x, dy, dx) => {
     while (
         (y + dy >= 0 && y + dy <= 7) &&
         (x + dx >= 0 && x + dx <= 7) &&
-        !(board[y + dy][x + dx] === undefined || board[y + dy][x + dx] === '')
+        !(board[y + dy][x + dx] === undefined || board[y + dy][x + dx] === '' || board[y + dy][x + dx] === 'move')
     ) {
         y += dy
         x += dx
@@ -72,18 +76,18 @@ const ReverseBord = () => {
             const child = items[index].firstElementChild
             child.classList.remove('black')
             child.classList.remove('white')
+            items[index].classList.remove('move')
 
             if (board[i][j] === 'black') {
                 child.classList.add('black')
             } else if (board[i][j] === 'white') {
                 child.classList.add('white')
-            } [
-                index++
-            ]
+            } else if (board[i][j] === 'move') {
+                items[index].classList.add('move')
+            }
+            index++
         }
     }
-    turn = turn === "white" ? 'black' : 'white'
-    h1.innerText = `${turn}の番です`
 }
 
 const CheckBlank = (y = 3, x = 3) => {
@@ -103,34 +107,121 @@ const CheckBlank = (y = 3, x = 3) => {
 }
 
 const CheckMySquare = (y, x, blank, turn) => {
-    console.log(y, x, blank)
     const move = []
     for (let item of blank) {
         const dy = item[2] * -1
         const dx = item[3] * -1
-        if (board[y + dy][x + dx] === '') continue
-        if (board[y + dy][x + dx] === turn) move.push([item[0], item[1]])
-        console.log(item[0], item[1], y + dy, x + dx)
+        let ny = y
+        let nx = x
+        while (
+            (ny + dy >= 0 && ny + dy <= 7) &&
+            (nx + dx >= 0 && nx + dx <= 7) &&
+            !(board[ny + dy][nx + dx] === undefined || board[ny + dy][nx + dx] === '')
+        ) {
+            ny += dy
+            nx += dx
+            if (board[ny][nx] === turn) {
+                move.push([item[0], item[1]])
+                break
+            }
+        }
     }
     return move
 }
 
 
 const CheckBord = () => {
-    const help = []
+    let blank
+    const move = []
+    let flag = true
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
             if (board[i][j] === 'white' && turn === 'black') {
-                const blank = CheckBlank(i, j)
-                const move = CheckMySquare(i, j, blank, 'black')
+                blank = CheckBlank(i, j)
+                move.push(...CheckMySquare(i, j, blank, 'black'))
             } else if (board[i][j] === 'black' && turn === 'white') {
-                const blank = CheckBlank(i, j)
-                const move = CheckMySquare(i, j, blank, 'white')
+                blank = CheckBlank(i, j)
+                move.push(...CheckMySquare(i, j, blank, 'white'))
+            }
+            if (board[i][j] === '') flag = false
+        }
+    }
+
+    if (move.length === 0) {
+        if (flag) {
+            Result()
+            return
+        } else {
+            if (AllDelete()) {
+                Result('all')
+                return
+            } else {
+                turn = turn === "white" ? 'black' : 'white'
+                skip=true
+                ClearMove()
+                CheckBord()
+                return
             }
         }
+    } else {
+        if(skip){
+            let player = turn === "white" ? '黒' : '白'
+            path.innerText = `${player}の置き場所がないためパスしました`
+            h1.innerText = `${turn === "white" ? '白' : '黒'}の番です`
+            skip=false
+        }else{
+            path.innerText = ''
+        }
+    }
+
+    for (let [y, x] of move) {
+        board[y][x] = 'move'
     }
 }
 
+const AllDelete = () => {
+    let black = 0
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            if (board[i][j] === 'black') black++
+        }
+    }
+    let white = 64 - black
+
+    if (black === 0 || white === 0) {
+        return true
+    } else {
+        return false
+    }
+}
+
+const Result = (el) => {
+    path.innerText = ''
+    if(el==='all'){
+        let player = turn === "white" ? '黒' : '白'
+        result.innerText = `${player}の勝ちです`
+        return
+    }
+    let black = 0
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            if (board[i][j] === 'black') black++
+        }
+    }
+    if (black === (64 - black)) {
+        result.innerText = `引き分けです`
+    } else {
+        result.innerText = `${black}対${64 - black}で${player}の勝ちです`
+    }
+
+}
+const ClearMove = () => {
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            if (board[i][j] === 'move') board[i][j] = ''
+        }
+    }
+}
 
 const BordClick = (y, x) => {
     if (board[y][x] === 'white' || board[y][x] === 'black') return
@@ -146,6 +237,11 @@ const BordClick = (y, x) => {
 
     if (JSON.stringify(board) === JSON.stringify(array)) return
     board[y][x] = turn
+    ClearMove()
+    turn = turn === "white" ? 'black' : 'white'
+    player = turn === "white" ? '白' : '黒'
+    h1.innerText = `${player}の番です`
+    CheckBord()
     ReverseBord()
 }
 
@@ -153,4 +249,5 @@ window.onload = () => {
     CreateArray()
     CheckBord()
     CreateTable()
+    ReverseBord()
 }

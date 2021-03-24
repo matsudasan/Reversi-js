@@ -47,6 +47,9 @@ td {
     border-radius: 50%;
     background-color: black;
 }
+.move{
+    background-color: yellow;
+}
 
 @media screen and (max-width: 500px) {
     .board {
