@@ -4,7 +4,7 @@ const result = document.getElementById('result')
 const path = document.getElementById('path')
 const board = []
 let turn = "white"
-let skip=false
+let skip = false
 
 const CreateArray = () => {
     for (let i = 0; i < 8; i++) {
@@ -151,25 +151,25 @@ const CheckBord = () => {
         if (flag) {
             Result()
             return
-        } else {
-            if (AllDelete()) {
-                Result('all')
-                return
-            } else {
-                turn = turn === "white" ? 'black' : 'white'
-                skip=true
-                ClearMove()
-                CheckBord()
-                return
-            }
         }
-    } else {
-        if(skip){
+
+        if (AllDelete()) {
+            Result('all')
+            return
+        }
+
+        turn = turn === "white" ? 'black' : 'white'
+        skip = true
+        ClearMove()
+        CheckBord()
+    }
+    else {
+        if (skip) {
             let player = turn === "white" ? '黒' : '白'
             path.innerText = `${player}の置き場所がないためパスしました`
             h1.innerText = `${turn === "white" ? '白' : '黒'}の番です`
-            skip=false
-        }else{
+            skip = false
+        } else {
             path.innerText = ''
         }
     }
@@ -197,7 +197,7 @@ const AllDelete = () => {
 
 const Result = (el) => {
     path.innerText = ''
-    if(el==='all'){
+    if (el === 'all') {
         let player = turn === "white" ? '黒' : '白'
         result.innerText = `${player}の勝ちです`
         return
